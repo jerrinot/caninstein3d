@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Caninestein3D</title>
+</head>
+<body style="margin:0; padding:0; background:#1a1a1a; display:flex; justify-content:center; align-items:center; min-height:100vh; flex-direction:column;">
+    <h1 style="color:#4a9eff; font-family:monospace; margin:0 0 20px 0;">🎮 Caninestein3D</h1>
+    <canvas id="canvas" oncontextmenu="event.preventDefault()" style="width:90vw; height:70vh;"></canvas>
+    <div style="color:#888; font-family:monospace; font-size:14px; margin-top:20px; text-align:center;">
+        W/S: Move | A/D: Rotate | M: Mouse look | TAB: Minimap | F11: Fullscreen
+    </div>
+
+    <script type='text/javascript'>
+        var Module = {
+            canvas: (function() {
+                return document.getElementById('canvas');
+            })()
+        };
+    </script>
+    {{{ SCRIPT }}}
+</body>
+</html>

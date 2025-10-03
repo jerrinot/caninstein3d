@@ -1,0 +1,34 @@
+# Build directories
+build/
+cmake-build-*/
+build-wasm/
+*.o
+*.a
+
+# Executables
+raycaster
+*.exe
+*.out
+
+# IDE files
+.idea/
+.vscode/
+.vs/
+*.swp
+*.swo
+*~
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+
+# Mac
+.DS_Store
+
+# Backup files
+*.bak
+*.backup
