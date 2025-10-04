@@ -26,6 +26,15 @@ jobs:
         with:
           version: '3.1.51'
 
+      - name: Cache Emscripten system libraries
+        uses: actions/cache@v4
+        with:
+          path: ~/.emscripten_cache
+          key: emscripten-cache-${{ runner.os }}-3.1.51-${{ hashFiles('build_wasm.sh') }}
+          restore-keys: |
+            emscripten-cache-${{ runner.os }}-3.1.51-
+            emscripten-cache-${{ runner.os }}-
+
       - name: Verify Emscripten installation
         run: emcc --version
 
