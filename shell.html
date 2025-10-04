@@ -3,21 +3,607 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Caninestein3D</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            background: #1a1a1a;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #title {
+            color: #4a9eff;
+            font-family: monospace;
+            font-size: 24px;
+            padding: 10px;
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        /* Touch controls overlay */
+        #touch-controls {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .touch-zone {
+            position: absolute;
+            pointer-events: auto;
+        }
+
+        /* Movement joystick (left side) */
+        #joystick-zone {
+            left: 0;
+            bottom: 0;
+            width: 40%;
+            height: 50%;
+        }
+
+        #joystick-base {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: rgba(74, 158, 255, 0.2);
+            border: 3px solid rgba(74, 158, 255, 0.4);
+            left: 30px;
+            bottom: 30px;
+        }
+
+        #joystick-stick {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(74, 158, 255, 0.6);
+            border: 3px solid rgba(74, 158, 255, 0.8);
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.1s ease-out;
+        }
+
+        /* Look area (right side) */
+        #look-zone {
+            right: 0;
+            bottom: 0;
+            width: 60%;
+            height: 70%;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Action buttons */
+        #fire-button {
+            position: absolute;
+            right: 30px;
+            bottom: 30px;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(255, 107, 107, 0.5);
+            border: 3px solid rgba(255, 107, 107, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 36px;
+            color: white;
+            pointer-events: auto;
+        }
+
+        #fire-button:active {
+            background: rgba(255, 107, 107, 0.8);
+            transform: scale(0.95);
+        }
+
+        #minimap-button {
+            position: absolute;
+            right: 20px;
+            top: 60px;
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            background: rgba(74, 158, 255, 0.5);
+            border: 2px solid rgba(74, 158, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+            color: white;
+            pointer-events: auto;
+            font-family: monospace;
+        }
+
+        #minimap-button:active {
+            background: rgba(74, 158, 255, 0.8);
+        }
+
+        /* Weapon switch buttons */
+        #weapon-buttons {
+            position: absolute;
+            left: 20px;
+            top: 60px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .weapon-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            background: rgba(74, 158, 255, 0.5);
+            border: 2px solid rgba(74, 158, 255, 0.8);
+            color: white;
+            font-family: monospace;
+            font-size: 12px;
+            pointer-events: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .weapon-btn:active {
+            background: rgba(74, 158, 255, 0.8);
+        }
+
+        /* Desktop info */
+        #desktop-info {
+            color: #888;
+            font-family: monospace;
+            font-size: 14px;
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 5;
+            pointer-events: none;
+            text-align: center;
+        }
+
+        /* Hide desktop info on mobile */
+        @media (max-width: 768px) or (max-height: 500px) {
+            #desktop-info {
+                display: none;
+            }
+            #title {
+                font-size: 18px;
+                top: 5px;
+            }
+        }
+
+        /* Hide touch controls on desktop */
+        @media (min-width: 769px) and (min-height: 501px) {
+            #joystick-base,
+            #fire-button,
+            #minimap-button,
+            #weapon-buttons {
+                display: none;
+            }
+        }
+    </style>
 </head>
-<body style="margin:0; padding:0; background:#1a1a1a; display:flex; justify-content:center; align-items:center; min-height:100vh; flex-direction:column;">
-    <h1 style="color:#4a9eff; font-family:monospace; margin:0 0 20px 0;">🎮 Caninestein3D</h1>
-    <canvas id="canvas" oncontextmenu="event.preventDefault()" style="width:90vw; height:70vh;"></canvas>
-    <div style="color:#888; font-family:monospace; font-size:14px; margin-top:20px; text-align:center;">
-        W/S: Move | A/D: Rotate | M: Mouse look | TAB: Minimap | F11: Fullscreen
+<body>
+    <div id="game-container">
+        <div id="title">🎮 Caninestein3D</div>
+        <canvas id="canvas" oncontextmenu="event.preventDefault()"></canvas>
+
+        <!-- Touch controls overlay -->
+        <div id="touch-controls">
+            <!-- Movement joystick -->
+            <div id="joystick-zone" class="touch-zone">
+                <div id="joystick-base">
+                    <div id="joystick-stick"></div>
+                </div>
+            </div>
+
+            <!-- Look/turn area -->
+            <div id="look-zone" class="touch-zone"></div>
+
+            <!-- Fire button -->
+            <div id="fire-button">🔫</div>
+
+            <!-- Minimap toggle -->
+            <div id="minimap-button">MAP</div>
+
+            <!-- Weapon switch buttons -->
+            <div id="weapon-buttons">
+                <div class="weapon-btn" data-weapon="1">🔪</div>
+                <div class="weapon-btn" data-weapon="2">🔫</div>
+                <div class="weapon-btn" data-weapon="3">💣</div>
+                <div class="weapon-btn" data-weapon="4">⚡</div>
+            </div>
+        </div>
+
+        <div id="desktop-info">
+            W/S: Move | A/D: Rotate | M: Mouse look | TAB: Minimap | F11: Fullscreen
+        </div>
     </div>
 
     <script type='text/javascript'>
         var Module = {
             canvas: (function() {
                 return document.getElementById('canvas');
-            })()
+            })(),
+
+            // Handle audio unlock for mobile browsers
+            preRun: [],
+            postRun: [function() {
+                console.log('Setting up mobile audio unlock...');
+
+                // Function to find and resume SDL_mixer's AudioContext
+                function resumeAudio() {
+                    // Try multiple paths to find the audio context
+                    var audioContext = null;
+
+                    // Path 1: SDL2.audioContext (SDL_mixer)
+                    if (typeof SDL2 !== 'undefined' && SDL2.audioContext) {
+                        audioContext = SDL2.audioContext;
+                    }
+                    // Path 2: SDL2.audio object
+                    else if (typeof SDL2 !== 'undefined' && SDL2.audio) {
+                        if (SDL2.audio.scriptProcessorNode && SDL2.audio.scriptProcessorNode.context) {
+                            audioContext = SDL2.audio.scriptProcessorNode.context;
+                        } else if (SDL2.audio.context) {
+                            audioContext = SDL2.audio.context;
+                        }
+                    }
+                    // Path 3: Search all AudioContext instances globally
+                    if (!audioContext && typeof AudioContext !== 'undefined') {
+                        // Emscripten stores the context globally
+                        if (window.webkitAudioContext) {
+                            var contexts = [];
+                            // Try to find existing contexts
+                            if (typeof webkitAudioContext !== 'undefined') {
+                                // Access via Module
+                                if (Module.SDL2 && Module.SDL2.audioContext) {
+                                    audioContext = Module.SDL2.audioContext;
+                                }
+                            }
+                        }
+                    }
+
+                    // If we found a context, try to resume it
+                    if (audioContext) {
+                        if (audioContext.state === 'suspended') {
+                            console.log('Resuming suspended audio context...');
+                            audioContext.resume().then(function() {
+                                console.log('Audio context resumed successfully!');
+                            }).catch(function(err) {
+                                console.error('Failed to resume audio context:', err);
+                            });
+                        } else {
+                            console.log('Audio context state:', audioContext.state);
+                        }
+                    } else {
+                        console.log('No audio context found yet, SDL_mixer may not be initialized');
+                    }
+
+                    return audioContext !== null;
+                }
+
+                // Try to resume on every user interaction (not just once)
+                var events = ['touchstart', 'touchend', 'mousedown', 'click'];
+                events.forEach(function(eventType) {
+                    document.addEventListener(eventType, function() {
+                        setTimeout(resumeAudio, 0);
+                    }, false);
+                });
+
+                // Also try after a delay (when SDL_mixer is likely initialized)
+                setTimeout(function() {
+                    console.log('Delayed audio unlock attempt...');
+                    resumeAudio();
+                }, 1000);
+            }]
         };
+
+        // Touch controls implementation
+        (function() {
+            // Wait for SDL to be ready
+            function waitForSDL(callback) {
+                if (typeof SDL2 !== 'undefined' && SDL2.keyEvent) {
+                    callback();
+                } else {
+                    setTimeout(() => waitForSDL(callback), 100);
+                }
+            }
+
+            // Simulate keyboard state
+            const keyState = {
+                w: false,
+                s: false,
+                a: false,
+                d: false,
+                space: false,
+                tab: false
+            };
+
+            // Helper to simulate SDL key events using Emscripten's method
+            function simulateKey(key, pressed) {
+                const keyMap = {
+                    'w': { code: 'KeyW', key: 'w', keyCode: 87, which: 87 },
+                    's': { code: 'KeyS', key: 's', keyCode: 83, which: 83 },
+                    'a': { code: 'KeyA', key: 'a', keyCode: 65, which: 65 },
+                    'd': { code: 'KeyD', key: 'd', keyCode: 68, which: 68 },
+                    'space': { code: 'Space', key: ' ', keyCode: 32, which: 32 },
+                    'tab': { code: 'Tab', key: 'Tab', keyCode: 9, which: 9 },
+                    '1': { code: 'Digit1', key: '1', keyCode: 49, which: 49 },
+                    '2': { code: 'Digit2', key: '2', keyCode: 50, which: 50 },
+                    '3': { code: 'Digit3', key: '3', keyCode: 51, which: 51 },
+                    '4': { code: 'Digit4', key: '4', keyCode: 52, which: 52 }
+                };
+
+                const keyInfo = keyMap[key];
+                if (!keyInfo) return;
+
+                // Create a proper keyboard event
+                const event = new KeyboardEvent(pressed ? 'keydown' : 'keyup', {
+                    key: keyInfo.key,
+                    code: keyInfo.code,
+                    keyCode: keyInfo.keyCode,
+                    which: keyInfo.which,
+                    bubbles: true,
+                    cancelable: true
+                });
+
+                // Dispatch to the canvas element (SDL listens on window and canvas)
+                Module.canvas.dispatchEvent(event);
+                window.dispatchEvent(event);
+
+                // Update tracked state
+                if (keyState.hasOwnProperty(key)) {
+                    keyState[key] = pressed;
+                }
+            }
+
+            // Virtual joystick
+            const joystickZone = document.getElementById('joystick-zone');
+            const joystickBase = document.getElementById('joystick-base');
+            const joystickStick = document.getElementById('joystick-stick');
+
+            let joystickActive = false;
+            let joystickTouchId = null;
+
+            function updateJoystick(x, y) {
+                const rect = joystickBase.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+
+                const deltaX = x - centerX;
+                const deltaY = y - centerY;
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                const maxDistance = rect.width / 2 - 10;
+
+                // Clamp to max distance
+                let finalX = deltaX;
+                let finalY = deltaY;
+                if (distance > maxDistance) {
+                    const angle = Math.atan2(deltaY, deltaX);
+                    finalX = Math.cos(angle) * maxDistance;
+                    finalY = Math.sin(angle) * maxDistance;
+                }
+
+                // Update stick position
+                joystickStick.style.transform = `translate(calc(-50% + ${finalX}px), calc(-50% + ${finalY}px))`;
+
+                // Calculate normalized direction (-1 to 1)
+                const normX = finalX / maxDistance;
+                const normY = finalY / maxDistance;
+
+                // Threshold for activation
+                const threshold = 0.3;
+
+                // Forward/backward (Y axis)
+                const shouldMoveForward = normY < -threshold;
+                const shouldMoveBackward = normY > threshold;
+
+                if (shouldMoveForward !== keyState.w) {
+                    simulateKey('w', shouldMoveForward);
+                }
+                if (shouldMoveBackward !== keyState.s) {
+                    simulateKey('s', shouldMoveBackward);
+                }
+
+                // Left/right rotation (X axis)
+                const shouldRotateLeft = normX < -threshold;
+                const shouldRotateRight = normX > threshold;
+
+                if (shouldRotateLeft !== keyState.a) {
+                    simulateKey('a', shouldRotateLeft);
+                }
+                if (shouldRotateRight !== keyState.d) {
+                    simulateKey('d', shouldRotateRight);
+                }
+            }
+
+            function resetJoystick() {
+                joystickStick.style.transform = 'translate(-50%, -50%)';
+                joystickActive = false;
+                joystickTouchId = null;
+
+                // Release all movement keys
+                if (keyState.w) simulateKey('w', false);
+                if (keyState.s) simulateKey('s', false);
+                if (keyState.a) simulateKey('a', false);
+                if (keyState.d) simulateKey('d', false);
+            }
+
+            joystickZone.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                if (!joystickActive && e.changedTouches.length > 0) {
+                    joystickActive = true;
+                    joystickTouchId = e.changedTouches[0].identifier;
+                    updateJoystick(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+                }
+            });
+
+            joystickZone.addEventListener('touchmove', function(e) {
+                e.preventDefault();
+                if (joystickActive) {
+                    for (let i = 0; i < e.changedTouches.length; i++) {
+                        if (e.changedTouches[i].identifier === joystickTouchId) {
+                            updateJoystick(e.changedTouches[i].clientX, e.changedTouches[i].clientY);
+                            break;
+                        }
+                    }
+                }
+            });
+
+            joystickZone.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === joystickTouchId) {
+                        resetJoystick();
+                        break;
+                    }
+                }
+            });
+
+            joystickZone.addEventListener('touchcancel', function(e) {
+                e.preventDefault();
+                resetJoystick();
+            });
+
+            // Look zone (swipe to rotate view)
+            const lookZone = document.getElementById('look-zone');
+            let lookTouchId = null;
+            let lastLookX = 0;
+
+            lookZone.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                if (lookTouchId === null && e.changedTouches.length > 0) {
+                    lookTouchId = e.changedTouches[0].identifier;
+                    lastLookX = e.changedTouches[0].clientX;
+                }
+            });
+
+            lookZone.addEventListener('touchmove', function(e) {
+                e.preventDefault();
+                if (lookTouchId !== null) {
+                    for (let i = 0; i < e.changedTouches.length; i++) {
+                        if (e.changedTouches[i].identifier === lookTouchId) {
+                            const touch = e.changedTouches[i];
+                            const deltaX = touch.clientX - lastLookX;
+
+                            // Simulate mouse movement using MouseEvent
+                            if (Math.abs(deltaX) > 0) {
+                                const mouseEvent = new MouseEvent('mousemove', {
+                                    movementX: deltaX * 2, // Amplify for better control
+                                    movementY: 0,
+                                    bubbles: true,
+                                    cancelable: true
+                                });
+                                Module.canvas.dispatchEvent(mouseEvent);
+                            }
+
+                            lastLookX = touch.clientX;
+                            break;
+                        }
+                    }
+                }
+            });
+
+            lookZone.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === lookTouchId) {
+                        lookTouchId = null;
+                        break;
+                    }
+                }
+            });
+
+            lookZone.addEventListener('touchcancel', function(e) {
+                e.preventDefault();
+                lookTouchId = null;
+            });
+
+            // Fire button
+            const fireButton = document.getElementById('fire-button');
+            fireButton.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                simulateKey('space', true);
+            });
+
+            fireButton.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                simulateKey('space', false);
+            });
+
+            fireButton.addEventListener('touchcancel', function(e) {
+                e.preventDefault();
+                simulateKey('space', false);
+            });
+
+            // Minimap button
+            const minimapButton = document.getElementById('minimap-button');
+            minimapButton.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                simulateKey('tab', true);
+                // Auto-release after short delay
+                setTimeout(() => simulateKey('tab', false), 100);
+            });
+
+            // Weapon buttons
+            const weaponButtons = document.querySelectorAll('.weapon-btn');
+            weaponButtons.forEach(function(btn) {
+                btn.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    const weapon = this.getAttribute('data-weapon');
+                    simulateKey(weapon, true);
+                    // Auto-release after short delay
+                    setTimeout(() => simulateKey(weapon, false), 100);
+                });
+            });
+
+            // Enable mouse capture for look zone on mobile
+            lookZone.addEventListener('touchstart', function(e) {
+                if (Module.canvas && Module.canvas.requestPointerLock) {
+                    Module.canvas.requestPointerLock();
+                }
+            });
+        })();
     </script>
     {{{ SCRIPT }}}
 </body>

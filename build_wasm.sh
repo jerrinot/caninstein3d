@@ -26,6 +26,8 @@ emcc -O3 \
     -s EXPORTED_RUNTIME_METHODS='["ccall","cwrap"]' \
     -s EXPORTED_FUNCTIONS='["_main"]' \
     -s MINIFY_HTML=0 \
+    -s NO_EXIT_RUNTIME=1 \
+    -s SDL2_MIXER_FORMATS='["ogg","wav"]' \
     --preload-file ../data@/data \
     --shell-file ../shell.html \
     ../src/main.c \
